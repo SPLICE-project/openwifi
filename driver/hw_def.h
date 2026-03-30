@@ -285,6 +285,7 @@ const char *openofdm_tx_compatible_str = "sdr,openofdm_tx";
 #define OPENOFDM_TX_REG_MULTI_RST_ADDR                 (0*4)
 #define OPENOFDM_TX_REG_INIT_PILOT_STATE_ADDR          (1*4)
 #define OPENOFDM_TX_REG_INIT_DATA_STATE_ADDR           (2*4)
+#define OPENOFDM_TX_SET_MINUS_STF_SAMP_ADDR            (3*4)
 
 enum openofdm_tx_mode {
   OPENOFDM_TX_TEST = 0,
@@ -300,6 +301,7 @@ struct openofdm_tx_driver_api {
   void (*OPENOFDM_TX_REG_MULTI_RST_write)(u32 value);
   void (*OPENOFDM_TX_REG_INIT_PILOT_STATE_write)(u32 value);
   void (*OPENOFDM_TX_REG_INIT_DATA_STATE_write)(u32 value);
+  void (*OPENOFDM_TX_SET_MINUS_STF_SAMP_write)(u32 value);
 };
 
 // ---------------------------------------xpu low MAC controller-------------------------------

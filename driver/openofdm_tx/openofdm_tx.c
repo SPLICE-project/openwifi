@@ -26,6 +26,7 @@
 
 static void __iomem *base_addr; // to store driver specific base address needed for mmu to translate virtual address to physical address in our FPGA design
 
+
 /* IO accessors */
 static inline u32 reg_read(u32 reg)
 {
@@ -49,6 +50,9 @@ static inline void OPENOFDM_TX_REG_INIT_DATA_STATE_write(u32 Data) {
 	reg_write(OPENOFDM_TX_REG_INIT_DATA_STATE_ADDR, Data);
 }
 
+static inline void OPENOFDM_TX_SET_MINUS_STF_SAMP_write(u32 Data){
+	reg_write(OPENOFDM_TX_SET_MINUS_STF_SAMP_ADDR, Data);
+}
 static const struct of_device_id dev_of_ids[] = {
 	{ .compatible = "sdr,openofdm_tx", },
 	{}
@@ -58,6 +62,38 @@ MODULE_DEVICE_TABLE(of, dev_of_ids);
 static struct openofdm_tx_driver_api openofdm_tx_driver_api_inst;
 struct openofdm_tx_driver_api *openofdm_tx_api = &openofdm_tx_driver_api_inst;
 EXPORT_SYMBOL(openofdm_tx_api);
+
+//----------------------------------- Allow variable num of samples in STF -------------------------/
+static ssize_t num_minus_stf_store(struct device *dev,
+                                    struct device_attribute *attr,
+                                    const char *buf, size_t count)
+{
+    int val;
+    int ret;
+
+    ret = kstrtoint(buf, 10, &val);
+    if (ret)
+        return ret;
+
+    printk("%s num_minus_stf = %d\n", sdr_compatible_str, val);
+	if (val < 0 || val > 160){return -EINVAL;}
+
+	openofdm_tx_api->OPENOFDM_TX_SET_MINUS_STF_SAMP_write(val);
+	//rst
+	int i;
+	for (i=0;i<8;i++)
+		openofdm_tx_api->OPENOFDM_TX_REG_MULTI_RST_write(0);
+	for (i=0;i<32;i++)
+		openofdm_tx_api->OPENOFDM_TX_REG_MULTI_RST_write(0xFFFFFFFF);
+	for (i=0;i<8;i++)
+		openofdm_tx_api->OPENOFDM_TX_REG_MULTI_RST_write(0);
+
+    return count;
+}
+
+static DEVICE_ATTR_WO(num_minus_stf);
+//--------------------------------------------------------------------------------------------/
+
 
 static inline u32 hw_init(enum openofdm_tx_mode mode){
 	int err=0, i;
@@ -89,6 +125,7 @@ static inline u32 hw_init(enum openofdm_tx_mode mode){
 
 	openofdm_tx_api->OPENOFDM_TX_REG_INIT_PILOT_STATE_write(0x7F);
 	openofdm_tx_api->OPENOFDM_TX_REG_INIT_DATA_STATE_write(0x7F);
+	openofdm_tx_api->OPENOFDM_TX_SET_MINUS_STF_SAMP_write(0);
 
 	printk("%s hw_init err %d\n", openofdm_tx_compatible_str, err);
 	return(err);
@@ -123,7 +160,7 @@ static int dev_probe(struct platform_device *pdev)
 	openofdm_tx_api->OPENOFDM_TX_REG_MULTI_RST_write=OPENOFDM_TX_REG_MULTI_RST_write;
 	openofdm_tx_api->OPENOFDM_TX_REG_INIT_PILOT_STATE_write=OPENOFDM_TX_REG_INIT_PILOT_STATE_write;
 	openofdm_tx_api->OPENOFDM_TX_REG_INIT_DATA_STATE_write=OPENOFDM_TX_REG_INIT_DATA_STATE_write;
-	
+	openofdm_tx_api->OPENOFDM_TX_SET_MINUS_STF_SAMP_write = OPENOFDM_TX_SET_MINUS_STF_SAMP_write;
 	/* Request and map I/O memory */
 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	base_addr = devm_ioremap_resource(&pdev->dev, io);
@@ -134,6 +171,11 @@ static int dev_probe(struct platform_device *pdev)
 	printk("%s dev_probe base_addr 0x%08x\n", openofdm_tx_compatible_str,(u32)base_addr);
 	printk("%s dev_probe openofdm_tx_driver_api_inst 0x%08x\n", openofdm_tx_compatible_str, (u32)&openofdm_tx_driver_api_inst);
 	printk("%s dev_probe             openofdm_tx_api 0x%08x\n", openofdm_tx_compatible_str, (u32)openofdm_tx_api);
+
+
+	int ret = device_create_file(&pdev->dev, &dev_attr_num_minus_stf);
+  	if(ret){printk("%s dev_probe open ofdem_tx_driver FAILED to create sysfs entry\n", sdr_compatible_str);}
+	else{printk("%s dev_probe open ofdem_tx_driver SUCCESS to create sysfs entry\n", sdr_compatible_str);}
 
 	printk("%s dev_probe succeed!\n", openofdm_tx_compatible_str);
 
@@ -149,6 +191,8 @@ static int dev_remove(struct platform_device *pdev)
 	printk("%s dev_remove base_addr 0x%08x\n", openofdm_tx_compatible_str,(u32)base_addr);
 	printk("%s dev_remove openofdm_tx_driver_api_inst 0x%08x\n", openofdm_tx_compatible_str, (u32)&openofdm_tx_driver_api_inst);
 	printk("%s dev_remove             openofdm_tx_api 0x%08x\n", openofdm_tx_compatible_str, (u32)openofdm_tx_api);
+	device_remove_file(&pdev->dev, &dev_attr_num_minus_stf);
+
 
 	printk("%s dev_remove succeed!\n", openofdm_tx_compatible_str);
 	return 0;

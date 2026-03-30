@@ -122,6 +122,8 @@ MODULE_PARM_DESC(myint, "test_mode. bit0: aggregation enable(1)/disable(0)");
 module_param(init_tx_att, int, 0);
 MODULE_PARM_DESC(myint, "init_tx_att. TX attenuation in dB*1000  example: set to 3000 for 3dB attenuation");
 
+
+
 // ---------------rfkill---------------------------------------
 static bool openwifi_is_radio_enabled(struct openwifi_priv *priv)
 {
@@ -2719,11 +2721,13 @@ static int openwifi_dev_probe(struct platform_device *pdev)
        priv->mac_addr, priv->rf->name);
 
   openwifi_rfkill_init(dev);
+
   return 0;
 
  err_free_dev:
   ieee80211_free_hw(dev);
 
+  
   return err;
 }
 
