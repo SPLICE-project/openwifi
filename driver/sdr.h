@@ -313,9 +313,9 @@ static const struct ieee80211_channel openwifi_5GHz_channels[] = {
   // // CHAN5G(163, 5815, IEEE80211_CHAN_RADAR),
   // CHAN5G(165, 5825, IEEE80211_CHAN_RADAR),
   // CHAN5G(167, 5835, IEEE80211_CHAN_RADAR),
-  // CHAN5G(169, 5845, IEEE80211_CHAN_RADAR),
-  // CHAN5G(171, 5855, IEEE80211_CHAN_RADAR),
-  // CHAN5G(173, 5865, IEEE80211_CHAN_RADAR),
+  CHAN5G(169, 5845, 0),
+  CHAN5G(171, 5855, 0),
+  CHAN5G(173, 5865, 0),
 };
 
 static const struct ieee80211_iface_limit openwifi_if_limits[] = {
@@ -466,7 +466,7 @@ struct openwifi_priv {
   struct ieee80211_rate           rates_2GHz[12];
   struct ieee80211_rate           rates_5GHz[12];
   struct ieee80211_channel        channels_2GHz[13];
-  struct ieee80211_channel        channels_5GHz[11];
+  struct ieee80211_channel        channels_5GHz[14];
   struct ieee80211_supported_band band_2GHz;
   struct ieee80211_supported_band band_5GHz;
   bool rfkill_off;
